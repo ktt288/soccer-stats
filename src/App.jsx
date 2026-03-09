@@ -209,7 +209,9 @@ export default function App() {
   const [tab, setTab] = useState("record");
   const [statsSubTab, setStatsSubTab] = useState("ranking");
   const [players, setPlayers] = useState(DEFAULT_PLAYERS);
-  const [editNames, setEditNames] = useState(() => Object.fromEntries(DEFAULT_PLAYERS.map(p => [p.id, p.name])));
+  const [editPlayers, setEditPlayers] = useState(() =>
+    Object.fromEntries(DEFAULT_PLAYERS.map(p => [p.id, { name: p.name, number: p.number, position: p.position }]))
+  );
   const [events, setEvents] = useState(DEFAULT_EVENTS);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [radarPlayer, setRadarPlayer] = useState(DEFAULT_PLAYERS[0].id);
@@ -244,8 +246,20 @@ export default function App() {
     setTimeout(() => setFlash(null), 400);
   };
 
-  const applyNames = () => {
-    setPlayers(prev => prev.map(p => ({ ...p, name: editNames[p.id].trim() || p.name })));
+  const applyPlayers = () => {
+    setPlayers(prev => prev.map(p => {
+      const e = editPlayers[p.id];
+      return {
+        ...p,
+        name: e.name.trim() || p.name,
+        number: parseInt(e.number) || p.number,
+        position: e.position || p.position,
+      };
+    }));
+  };
+
+  const setEditPlayer = (id, field, value) => {
+    setEditPlayers(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
 
   const updateEvent = (id, field, value) => {
@@ -505,33 +519,70 @@ export default function App() {
         {/* ===== SETTINGS TAB ===== */}
         {tab === "settings" && (
           <div>
-            {/* Player Names */}
-            <div style={{ fontSize: 11, color: "#4a7fa5", fontWeight: 700, letterSpacing: 2, marginBottom: 16, textTransform: "uppercase" }}>選手名の編集</div>
-            {players.map(p => (
-              <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, background: "#0d1b2e", border: "1px solid #1e3a5f", borderRadius: 10, padding: "10px 14px", marginBottom: 8 }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: POS_COLOR[p.position], minWidth: 28, textAlign: "center" }}>{p.number}</div>
-                <div style={{ fontSize: 10, color: POS_COLOR[p.position], fontWeight: 700, minWidth: 26 }}>{p.position}</div>
-                <input
-                  value={editNames[p.id]}
-                  onChange={e => setEditNames(prev => ({ ...prev, [p.id]: e.target.value }))}
-                  style={{
-                    flex: 1, background: "#0a0f1e", border: "1px solid #1e3a5f", borderRadius: 6,
-                    padding: "6px 10px", color: "#e8eaf0", fontSize: 14, fontFamily: "inherit", outline: "none",
-                  }}
-                  onFocus={e => e.target.style.borderColor = "#00e5ff"}
-                  onBlur={e => e.target.style.borderColor = "#1e3a5f"}
-                />
-              </div>
-            ))}
+            {/* Player Editor */}
+            <div style={{ fontSize: 11, color: "#4a7fa5", fontWeight: 700, letterSpacing: 2, marginBottom: 16, textTransform: "uppercase" }}>選手の編集</div>
+            {players.map(p => {
+              const ep = editPlayers[p.id];
+              const posColor = POS_COLOR[ep.position] || "#e8eaf0";
+              return (
+                <div key={p.id} style={{ background: "#0d1b2e", border: `1px solid ${posColor}44`, borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    {/* Number */}
+                    <input
+                      type="number"
+                      value={ep.number}
+                      min={1}
+                      max={99}
+                      onChange={e => setEditPlayer(p.id, "number", e.target.value)}
+                      style={{
+                        width: 52, background: "#0a0f1e", border: "1px solid #1e3a5f", borderRadius: 6,
+                        padding: "6px 4px", color: posColor, fontSize: 18, fontWeight: 900,
+                        fontFamily: "inherit", outline: "none", textAlign: "center",
+                      }}
+                      onFocus={e => e.target.style.borderColor = "#00e5ff"}
+                      onBlur={e => e.target.style.borderColor = "#1e3a5f"}
+                    />
+                    {/* Position */}
+                    <select
+                      value={ep.position}
+                      onChange={e => setEditPlayer(p.id, "position", e.target.value)}
+                      style={{
+                        width: 60, background: "#0a0f1e", border: "1px solid #1e3a5f", borderRadius: 6,
+                        padding: "6px 4px", color: posColor, fontSize: 12, fontWeight: 700,
+                        fontFamily: "inherit", outline: "none", cursor: "pointer",
+                      }}
+                      onFocus={e => e.target.style.borderColor = "#00e5ff"}
+                      onBlur={e => e.target.style.borderColor = "#1e3a5f"}
+                    >
+                      {["GK", "DF", "MF", "FW"].map(pos => (
+                        <option key={pos} value={pos}>{pos}</option>
+                      ))}
+                    </select>
+                    {/* Name */}
+                    <input
+                      value={ep.name}
+                      onChange={e => setEditPlayer(p.id, "name", e.target.value)}
+                      placeholder="選手名"
+                      style={{
+                        flex: 1, background: "#0a0f1e", border: "1px solid #1e3a5f", borderRadius: 6,
+                        padding: "6px 10px", color: "#e8eaf0", fontSize: 14, fontFamily: "inherit", outline: "none",
+                      }}
+                      onFocus={e => e.target.style.borderColor = "#00e5ff"}
+                      onBlur={e => e.target.style.borderColor = "#1e3a5f"}
+                    />
+                  </div>
+                </div>
+              );
+            })}
             <button
-              onClick={applyNames}
+              onClick={applyPlayers}
               style={{
-                width: "100%", marginTop: 8, padding: "14px", background: "linear-gradient(135deg, #00695c, #00897b)",
+                width: "100%", marginTop: 4, padding: "14px", background: "linear-gradient(135deg, #00695c, #00897b)",
                 border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 800,
                 cursor: "pointer", letterSpacing: 1,
               }}
             >
-              ✅ 選手名を更新する
+              ✅ 選手情報を更新する
             </button>
 
             {/* Events / Stats Items */}
