@@ -117,7 +117,7 @@ function RankBar({ players, stats, eventId, color, emoji, label }) {
           </div>
           <div style={{ fontSize: 11, color: POS_COLOR[p.position], width: 22, textAlign: "right", fontWeight: 700 }}>#{p.number}</div>
           <div style={{ fontSize: 12, width: 60, color: "#c8d8e8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {p.name.split(" ")[1]}
+            {p.name.split(" ").at(-1)}
           </div>
           <div style={{ flex: 1, background: "#0a0f1e", borderRadius: 4, height: 8, overflow: "hidden" }}>
             <div style={{
@@ -187,7 +187,7 @@ export default function App() {
   const currentRadarPlayer = players.find(p => p.id === radarPlayer);
 
   return (
-    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", background: "#07101f", minHeight: "100vh", color: "#e8eaf0", maxWidth: 480, margin: "0 auto", display: "flex", flexDirection: "column" }}>
+    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", background: "#07101f", minHeight: "100vh", color: "#e8eaf0", maxWidth: 480, width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
 
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #0d2137, #0a1628)", padding: "16px 20px 12px", borderBottom: "1px solid #1e3a5f", position: "sticky", top: 0, zIndex: 10 }}>
@@ -232,7 +232,7 @@ export default function App() {
                     transition: "all 0.15s", transform: selectedPlayer === p.id ? "scale(1.05)" : "scale(1)",
                   }}>
                     <div style={{ fontSize: 22, fontWeight: 900, color: selectedPlayer === p.id ? POS_COLOR[p.position] : "#e8eaf0", lineHeight: 1 }}>{p.number}</div>
-                    <div style={{ fontSize: 9, color: "#4a7fa5", marginTop: 2, lineHeight: 1.2 }}>{p.name.split(" ")[1]}</div>
+                    <div style={{ fontSize: 9, color: "#4a7fa5", marginTop: 2, lineHeight: 1.2 }}>{p.name.split(" ").at(-1)}</div>
                     <div style={{ fontSize: 8, color: POS_COLOR[p.position], fontWeight: 700, marginTop: 2 }}>{p.position}</div>
                   </button>
                 ))}
@@ -308,7 +308,7 @@ export default function App() {
                         transform: radarPlayer === p.id ? "scale(1.05)" : "scale(1)", transition: "all 0.15s",
                       }}>
                         <div style={{ fontSize: 22, fontWeight: 900, color: radarPlayer === p.id ? POS_COLOR[p.position] : "#e8eaf0" }}>{p.number}</div>
-                        <div style={{ fontSize: 9, color: "#4a7fa5", marginTop: 2 }}>{p.name.split(" ")[1]}</div>
+                        <div style={{ fontSize: 9, color: "#4a7fa5", marginTop: 2 }}>{p.name.split(" ").at(-1)}</div>
                         <div style={{ fontSize: 8, color: POS_COLOR[p.position], fontWeight: 700, marginTop: 2 }}>{p.position}</div>
                       </button>
                     ))}
@@ -357,7 +357,7 @@ export default function App() {
                 {overallSorted.map((p, rank) => {
                   const s = stats[p.id];
                   const total = totalFor(p.id);
-                  const maxTotal = Math.max(...PLAYERS.map(pl => totalFor(pl.id)), 1);
+                  const maxTotal = Math.max(...players.map(pl => totalFor(pl.id)), 1);
                   return (
                     <div key={p.id} style={{ background: "#0d1b2e", border: rank === 0 ? `1px solid ${POS_COLOR[p.position]}88` : "1px solid #1e3a5f", borderRadius: 12, padding: "14px 16px", marginBottom: 10 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
