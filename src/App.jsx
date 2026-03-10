@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "./supabase";
 
 const DEFAULT_PLAYERS = [
   { id: 1, name: "れん",       number: 1, position: "GK", starter: true },
@@ -226,6 +227,66 @@ export default function App() {
   const [running, setRunning] = useState(false);
   const [flash, setFlash] = useState(null);
   const [timerRef] = useState({ interval: null });
+  const [saveModal, setSaveModal] = useState(false);
+  const [saveNotes, setSaveNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [historyMatches, setHistoryMatches] = useState([]);
+  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [selectedMatchEvents, setSelectedMatchEvents] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const loadHistory = async () => {
+    setLoadingHistory(true);
+    const { data, error } = await supabase
+      .from("matches")
+      .select("*")
+      .order("played_at", { ascending: false })
+      .limit(30);
+    if (!error) setHistoryMatches(data || []);
+    setLoadingHistory(false);
+  };
+
+  const loadMatchDetail = async (matchId) => {
+    const { data, error } = await supabase
+      .from("match_events")
+      .select("*")
+      .eq("match_id", matchId)
+      .order("elapsed_seconds", { ascending: true });
+    if (!error) setSelectedMatchEvents(data || []);
+  };
+
+  const saveMatch = async () => {
+    if (log.length === 0) return;
+    setSaving(true);
+    const { data: matchData, error: matchError } = await supabase
+      .from("matches")
+      .insert({ duration_seconds: matchTime, notes: saveNotes.trim() || null })
+      .select()
+      .single();
+    if (matchError || !matchData) { setSaving(false); return; }
+    const eventsToInsert = log.map(entry => {
+      const player = players.find(p => p.name === entry.player && p.number === entry.number);
+      return {
+        match_id: matchData.id,
+        player_id: player?.id ?? null,
+        player_name: entry.player,
+        player_number: entry.number,
+        player_position: player?.position ?? null,
+        event_id: events.find(e => e.label === entry.event)?.id ?? null,
+        event_label: entry.event,
+        elapsed_seconds: entry.time,
+      };
+    });
+    await supabase.from("match_events").insert(eventsToInsert);
+    setSaving(false);
+    setSaveModal(false);
+    setSaveNotes("");
+    alert("試合データを保存しました！");
+  };
+
+  useEffect(() => {
+    if (tab === "history") loadHistory();
+  }, [tab]);
 
   const toggleTimer = () => {
     if (running) { clearInterval(timerRef.interval); setRunning(false); }
@@ -353,7 +414,7 @@ export default function App() {
 
       {/* Tabs */}
       <div style={{ display: "flex", background: "#0d1b2e", borderBottom: "1px solid #1e3a5f", flexShrink: 0 }}>
-        {[{ id: "record", label: "📝 記録" }, { id: "stats", label: "📊 スタッツ" }, { id: "log", label: "📋 ログ" }, { id: "settings", label: "⚙️ 設定" }].map(t => (
+        {[{ id: "record", label: "📝 記録" }, { id: "stats", label: "📊 スタッツ" }, { id: "log", label: "📋 ログ" }, { id: "history", label: "📅 履歴" }, { id: "settings", label: "⚙️ 設定" }].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, padding: "12px 0", background: "none", border: "none", color: tab === t.id ? "#00e5ff" : "#4a7fa5", fontWeight: tab === t.id ? 700 : 400, fontSize: 12, cursor: "pointer", borderBottom: tab === t.id ? "2px solid #00e5ff" : "2px solid transparent", transition: "all 0.2s" }}>
             {t.label}
           </button>
@@ -513,6 +574,62 @@ export default function App() {
           </div>
         )}
 
+        {/* ===== HISTORY TAB ===== */}
+        {tab === "history" && (
+          <div>
+            {sectionLabel("試合履歴")}
+            {loadingHistory && <div style={{ textAlign: "center", padding: 40, color: "#4a7fa5" }}>読み込み中...</div>}
+            {!loadingHistory && historyMatches.length === 0 && (
+              <div style={{ textAlign: "center", padding: "40px", color: "#2a4a6a", fontSize: 14, background: "#0d1b2e", borderRadius: 12, border: "1px dashed #1e3a5f" }}>
+                保存された試合がありません
+              </div>
+            )}
+            {!selectedMatch && historyMatches.map(m => (
+              <button key={m.id} onClick={() => { setSelectedMatch(m); loadMatchDetail(m.id); }}
+                style={{ width: "100%", display: "block", background: "#0d1b2e", border: "1px solid #1e3a5f", borderRadius: 12, padding: "14px 16px", marginBottom: 10, cursor: "pointer", textAlign: "left" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#e8eaf0" }}>
+                    {new Date(m.played_at).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#00e5ff" }}>{formatTime(m.duration_seconds ?? 0)}</div>
+                </div>
+                {m.notes && <div style={{ fontSize: 11, color: "#4a7fa5", marginTop: 4 }}>{m.notes}</div>}
+              </button>
+            ))}
+            {selectedMatch && (
+              <div>
+                <button onClick={() => { setSelectedMatch(null); setSelectedMatchEvents([]); }}
+                  style={{ background: "none", border: "1px solid #1e3a5f", borderRadius: 8, color: "#4a7fa5", fontSize: 12, padding: "6px 14px", cursor: "pointer", marginBottom: 14 }}>
+                  ← 一覧に戻る
+                </button>
+                <div style={{ background: "#0d1b2e", border: "1px solid #1e3a5f", borderRadius: 12, padding: "14px 16px", marginBottom: 14 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 }}>
+                    {new Date(selectedMatch.played_at).toLocaleDateString("ja-JP", { year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#00e5ff" }}>試合時間: {formatTime(selectedMatch.duration_seconds ?? 0)}</div>
+                  {selectedMatch.notes && <div style={{ fontSize: 12, color: "#4a7fa5", marginTop: 4 }}>{selectedMatch.notes}</div>}
+                </div>
+                {sectionLabel("イベントログ")}
+                {selectedMatchEvents.length === 0 && (
+                  <div style={{ textAlign: "center", padding: "24px", color: "#2a4a6a", fontSize: 13 }}>イベントなし</div>
+                )}
+                {selectedMatchEvents.map((entry, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, background: "#0d1b2e", border: "1px solid #1e3a5f", borderRadius: 10, padding: "10px 14px", marginBottom: 8 }}>
+                    <div style={{ fontSize: 13, fontWeight: 900, color: "#00e5ff", fontVariantNumeric: "tabular-nums", minWidth: 40 }}>{formatTime(entry.elapsed_seconds)}</div>
+                    <div style={{ background: "#162030", borderRadius: 6, padding: "2px 8px", fontSize: 12, fontWeight: 700, color: "#e8eaf0", minWidth: 28, textAlign: "center" }}>#{entry.player_number}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.player_name}</div>
+                    </div>
+                    <div style={{ fontSize: 11, color: "#e8eaf0", fontWeight: 700, background: "#1e3a5f", padding: "3px 8px", borderRadius: 6, whiteSpace: "nowrap" }}>
+                      {entry.event_label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ===== SETTINGS TAB ===== */}
         {tab === "settings" && (
           <div>
@@ -611,7 +728,16 @@ export default function App() {
         {/* ===== LOG TAB ===== */}
         {tab === "log" && (
           <div>
-            {sectionLabel("イベントログ")}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: "#4a7fa5", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>イベントログ</div>
+              <button
+                onClick={() => setSaveModal(true)}
+                disabled={log.length === 0}
+                style={{ background: log.length > 0 ? "linear-gradient(135deg, #1b5e20, #2e7d32)" : "#0a0f1e", border: `1px solid ${log.length > 0 ? "#00c853" : "#1e3a5f"}`, borderRadius: 8, color: log.length > 0 ? "#00e676" : "#2a4a6a", fontSize: 12, fontWeight: 700, padding: "6px 14px", cursor: log.length > 0 ? "pointer" : "default" }}
+              >
+                💾 試合を保存
+              </button>
+            </div>
             {log.length === 0 && (
               <div style={{ textAlign: "center", padding: "40px", color: "#2a4a6a", fontSize: 14, background: "#0d1b2e", borderRadius: 12, border: "1px dashed #1e3a5f" }}>
                 まだイベントが記録されていません
@@ -633,6 +759,36 @@ export default function App() {
         )}
 
       </div>
+
+      {/* ===== SAVE MODAL ===== */}
+      {saveModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "#0d1b2e", border: "1px solid #1e3a5f", borderRadius: 16, padding: 24, width: "100%", maxWidth: 360 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 16 }}>💾 試合を保存</div>
+            <div style={{ fontSize: 12, color: "#4a7fa5", marginBottom: 8 }}>対戦相手・メモ（任意）</div>
+            <input
+              value={saveNotes}
+              onChange={e => setSaveNotes(e.target.value)}
+              placeholder="例: vs 〇〇FC、練習試合"
+              style={{ width: "100%", background: "#0a0f1e", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8eaf0", fontFamily: "inherit", fontSize: 14, outline: "none", boxSizing: "border-box", marginBottom: 16 }}
+            />
+            <div style={{ fontSize: 11, color: "#2a4a6a", marginBottom: 20 }}>
+              イベント {log.length}件 / 試合時間 {formatTime(matchTime)} を保存します
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setSaveModal(false)} disabled={saving}
+                style={{ flex: 1, padding: "12px", background: "#0a0f1e", border: "1px solid #1e3a5f", borderRadius: 10, color: "#4a7fa5", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                キャンセル
+              </button>
+              <button onClick={saveMatch} disabled={saving}
+                style={{ flex: 1, padding: "12px", background: saving ? "#0a0f1e" : "linear-gradient(135deg, #1b5e20, #2e7d32)", border: "none", borderRadius: 10, color: saving ? "#4a7fa5" : "#fff", fontSize: 14, fontWeight: 800, cursor: saving ? "default" : "pointer" }}>
+                {saving ? "保存中..." : "保存する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
