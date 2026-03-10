@@ -9,7 +9,7 @@ const DEFAULT_PLAYERS = [
   { id: 5, name: "たすく",     number: 5, position: "MF", starter: true },
   { id: 6, name: "りんたろう", number: 6, position: "MF", starter: true },
   { id: 7, name: "こうたろう", number: 7, position: "FW", starter: true },
-  { id: 8, name: "ゆうま",     number: 8, position: "FW", starter: true },
+  { id: 8, name: "えいと",     number: 8, position: "FW", starter: true },
 ];
 
 const DEFAULT_EVENTS = [
@@ -425,7 +425,7 @@ export default function App() {
       <div style={{ background: "linear-gradient(135deg, #0d2137, #0a1628)", padding: "16px 20px 12px", borderBottom: "1px solid #1e3a5f", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ fontSize: 11, color: "#4a7fa5", letterSpacing: 2, fontWeight: 700, textTransform: "uppercase" }}>少年サッカー</div>
+            <div style={{ fontSize: 11, color: "#4a7fa5", letterSpacing: 2, fontWeight: 700, textTransform: "uppercase" }}>101FC</div>
             <div style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>スタッツ記録</div>
           </div>
           <div style={{ textAlign: "center" }}>
@@ -436,6 +436,12 @@ export default function App() {
               {running ? "⏸ 停止" : "▶ 開始"}
             </button>
           </div>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, color: "#7a9cc0", fontSize: 11, fontWeight: 600, padding: "6px 10px", cursor: "pointer" }}
+          >
+            ログアウト
+          </button>
         </div>
       </div>
 
