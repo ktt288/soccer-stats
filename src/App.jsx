@@ -233,6 +233,10 @@ export default function App() {
   const [historyMatches, setHistoryMatches] = useState([]);
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [selectedMatchEvents, setSelectedMatchEvents] = useState([]);
+  const [pwNew, setPwNew] = useState("");
+  const [pwConfirm, setPwConfirm] = useState("");
+  const [pwMsg, setPwMsg] = useState(null); // { type: "ok"|"err", text }
+  const [pwLoading, setPwLoading] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [matchDetailTab, setMatchDetailTab] = useState("log");
   const [matchStatsSubTab, setMatchStatsSubTab] = useState("ranking");
@@ -876,6 +880,58 @@ export default function App() {
               >
                 ＋ 項目を追加する
               </button>
+            </div>
+
+            {/* Password Change */}
+            <div style={{ marginTop: 28 }}>
+              {sectionLabel("パスワード変更")}
+              <div style={{ background: "#0d1b2e", border: "1px solid #1e3a5f", borderRadius: 10, padding: "16px 14px" }}>
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, color: "#4a7fa5", marginBottom: 6 }}>新しいパスワード</div>
+                  <input
+                    type="password"
+                    value={pwNew}
+                    onChange={e => setPwNew(e.target.value)}
+                    placeholder="••••••••"
+                    style={{ width: "100%", background: "#0a0f1e", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8eaf0", fontSize: 16, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 12, color: "#4a7fa5", marginBottom: 6 }}>新しいパスワード（確認）</div>
+                  <input
+                    type="password"
+                    value={pwConfirm}
+                    onChange={e => setPwConfirm(e.target.value)}
+                    placeholder="••••••••"
+                    style={{ width: "100%", background: "#0a0f1e", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8eaf0", fontSize: 16, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+                {pwMsg && (
+                  <div style={{ background: pwMsg.type === "ok" ? "rgba(0,200,83,0.12)" : "rgba(255,80,80,0.12)", border: `1px solid ${pwMsg.type === "ok" ? "rgba(0,200,83,0.3)" : "rgba(255,80,80,0.3)"}`, borderRadius: 8, padding: "8px 12px", color: pwMsg.type === "ok" ? "#00e676" : "#ff8080", fontSize: 13, marginBottom: 12 }}>
+                    {pwMsg.text}
+                  </div>
+                )}
+                <button
+                  disabled={pwLoading}
+                  onClick={async () => {
+                    if (pwNew.length < 6) return setPwMsg({ type: "err", text: "パスワードは6文字以上にしてください" });
+                    if (pwNew !== pwConfirm) return setPwMsg({ type: "err", text: "パスワードが一致しません" });
+                    setPwLoading(true);
+                    setPwMsg(null);
+                    const { error } = await supabase.auth.updateUser({ password: pwNew });
+                    setPwLoading(false);
+                    if (error) {
+                      setPwMsg({ type: "err", text: "変更に失敗しました" });
+                    } else {
+                      setPwMsg({ type: "ok", text: "パスワードを変更しました" });
+                      setPwNew(""); setPwConfirm("");
+                    }
+                  }}
+                  style={{ width: "100%", padding: "12px", background: pwLoading ? "#0a0f1e" : "linear-gradient(135deg, #4a148c, #6a1b9a)", border: "none", borderRadius: 10, color: pwLoading ? "#4a7fa5" : "#fff", fontSize: 14, fontWeight: 700, cursor: pwLoading ? "default" : "pointer" }}
+                >
+                  {pwLoading ? "変更中..." : "🔑 パスワードを変更する"}
+                </button>
+              </div>
             </div>
           </div>
         )}
