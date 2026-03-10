@@ -362,7 +362,7 @@ export default function App() {
   };
 
   const addPlayer = async () => {
-    const newId = Date.now();
+    const newId = Math.max(...players.map(p => Number(p.id)), 0) + 1;
     const newPlayer = { id: newId, name: "新しい選手", number: 99, position: "MF", starter: false, sort_order: players.length };
     setPlayers(prev => [...prev, newPlayer]);
     setEditPlayers(prev => ({ ...prev, [newId]: { name: newPlayer.name, number: newPlayer.number, position: newPlayer.position, starter: newPlayer.starter } }));
