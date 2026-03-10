@@ -242,6 +242,19 @@ export default function App() {
   const [matchStatsSubTab, setMatchStatsSubTab] = useState("ranking");
   const [matchRadarPlayerKey, setMatchRadarPlayerKey] = useState(null);
 
+  const loadPlayers = async () => {
+    const { data, error } = await supabase.from("players").select("*").order("sort_order");
+    if (!error && data && data.length > 0) {
+      setPlayers(data);
+      setEditPlayers(Object.fromEntries(data.map(p => [p.id, { name: p.name, number: p.number, position: p.position, starter: p.starter }])));
+      setStats(prev => {
+        const updated = { ...prev };
+        data.forEach(p => { if (!updated[p.id]) updated[p.id] = Object.fromEntries(DEFAULT_EVENTS.map(ev => [ev.id, 0])); });
+        return updated;
+      });
+    }
+  };
+
   const loadHistory = async () => {
     setLoadingHistory(true);
     const { data, error } = await supabase
@@ -291,6 +304,8 @@ export default function App() {
     alert("試合データを保存しました！");
   };
 
+  useEffect(() => { loadPlayers(); }, []);
+
   useEffect(() => {
     if (tab === "history") loadHistory();
   }, [tab]);
@@ -317,8 +332,8 @@ export default function App() {
     setEditPlayers(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
 
-  const applyPlayers = () => {
-    setPlayers(prev => prev.map(p => {
+  const applyPlayers = async () => {
+    const updated = players.map((p, i) => {
       const e = editPlayers[p.id];
       return {
         ...p,
@@ -326,19 +341,23 @@ export default function App() {
         number: parseInt(e.number) || p.number,
         position: e.position || p.position,
         starter: e.starter,
+        sort_order: i,
       };
-    }));
+    });
+    setPlayers(updated);
+    await supabase.from("players").upsert(updated);
   };
 
-  const addPlayer = () => {
+  const addPlayer = async () => {
     const newId = Date.now();
-    const newPlayer = { id: newId, name: "新しい選手", number: 99, position: "MF", starter: false };
+    const newPlayer = { id: newId, name: "新しい選手", number: 99, position: "MF", starter: false, sort_order: players.length };
     setPlayers(prev => [...prev, newPlayer]);
     setEditPlayers(prev => ({ ...prev, [newId]: { name: newPlayer.name, number: newPlayer.number, position: newPlayer.position, starter: newPlayer.starter } }));
     setStats(prev => ({ ...prev, [newId]: Object.fromEntries(events.map(ev => [ev.id, 0])) }));
+    await supabase.from("players").insert(newPlayer);
   };
 
-  const deletePlayer = (id) => {
+  const deletePlayer = async (id) => {
     setPlayers(prev => {
       const remaining = prev.filter(p => p.id !== id);
       if (radarPlayer === id && remaining.length > 0) setRadarPlayer(remaining[0].id);
@@ -347,6 +366,7 @@ export default function App() {
     setEditPlayers(prev => { const { [id]: _, ...rest } = prev; return rest; });
     setStats(prev => { const { [id]: _, ...rest } = prev; return rest; });
     if (selectedPlayer === id) setSelectedPlayer(null);
+    await supabase.from("players").delete().eq("id", id);
   };
 
   const updateEvent = (id, field, value) => {
