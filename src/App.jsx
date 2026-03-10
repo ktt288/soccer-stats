@@ -480,6 +480,21 @@ export default function App() {
               >
                 💾 保存
               </button>
+              <button
+                onClick={() => {
+                  if ((log.length > 0 || matchTime > 0) && !window.confirm("記録をリセットします。保存されていないデータは失われます。")) return;
+                  clearInterval(timerRef.interval);
+                  setRunning(false);
+                  setMatchTime(0);
+                  setLog([]);
+                  setStats(Object.fromEntries(players.map(p => [p.id, Object.fromEntries(events.map(ev => [ev.id, 0]))])));
+                  setSelectedPlayer(null);
+                }}
+                disabled={log.length === 0 && matchTime === 0}
+                style={{ background: "#0a0f1e", border: `1px solid ${(log.length > 0 || matchTime > 0) ? "#7f1d1d" : "#1e3a5f"}`, borderRadius: 6, color: (log.length > 0 || matchTime > 0) ? "#f87171" : "#2a4a6a", fontSize: 11, fontWeight: 700, padding: "3px 10px", cursor: (log.length > 0 || matchTime > 0) ? "pointer" : "default", letterSpacing: 1 }}
+              >
+                🗑 リセット
+              </button>
             </div>
           </div>
           <button
