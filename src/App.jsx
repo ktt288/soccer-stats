@@ -559,7 +559,7 @@ export default function App() {
         {tab === "stats" && (
           <div>
             <div style={{ display: "flex", background: "#0a0f1e", borderRadius: 10, padding: 4, marginBottom: 16, gap: 4 }}>
-              {[{ id: "ranking", label: "🏆 ランキング" }, { id: "radar", label: "🕸️ レーダー" }, { id: "overall", label: "📋 総合" }].map(st => (
+              {[{ id: "ranking", label: "🏆 ランキング" }, { id: "radar", label: "🕸️ レーダー" }, { id: "overall", label: "📋 総合" }, { id: "aptitude", label: "🔍 適正" }].map(st => (
                 <button key={st.id} onClick={() => setStatsSubTab(st.id)} style={{
                   flex: 1, padding: "8px 4px", background: statsSubTab === st.id ? "#1e3a5f" : "none",
                   border: "none", borderRadius: 7, color: statsSubTab === st.id ? "#00e5ff" : "#4a7fa5",
@@ -611,6 +611,59 @@ export default function App() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {statsSubTab === "aptitude" && (
+              <div>
+                {sectionLabel("ポジション適正")}
+                <div style={{ fontSize: 12, color: "#4a7fa5", marginBottom: 16 }}>今試合のスタッツからおすすめポジションを算出します</div>
+                {players.map(p => {
+                  const s = stats[p.id] || {};
+                  const norm = (id) => {
+                    const ev = events.find(e => e.id === id);
+                    return ev ? Math.min((s[id] || 0) / (ev.max || 10), 1) : 0;
+                  };
+                  const scores = {
+                    GK: Math.round((norm("cover") * 50 + norm("intercept") * 30 + norm("press") * 20)),
+                    DF: Math.round((norm("intercept") * 50 + norm("cover") * 30 + norm("pass") * 20)),
+                    MF: Math.round((norm("pass") * 40 + norm("press") * 30 + norm("dribble") * 20 + norm("intercept") * 10)),
+                    FW: Math.round((norm("shot") * 50 + norm("dribble") * 30 + norm("press") * 20)),
+                  };
+                  const total = Object.values(scores).reduce((a, b) => a + b, 0);
+                  const recommended = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+                  const noData = total === 0;
+                  return (
+                    <div key={p.id} style={{ background: "#0d1b2e", border: `1px solid ${noData ? "#1e3a5f" : POS_COLOR[recommended] + "55"}`, borderRadius: 12, padding: "14px 16px", marginBottom: 10 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ fontSize: 22, fontWeight: 900, color: POS_COLOR[p.position] || "#fff" }}>{p.number}</div>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 700 }}>{p.name}</div>
+                            <div style={{ fontSize: 10, color: "#4a7fa5" }}>登録: {p.position}</div>
+                          </div>
+                        </div>
+                        {noData ? (
+                          <div style={{ fontSize: 11, color: "#2a4a6a" }}>データなし</div>
+                        ) : (
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: 10, color: "#4a7fa5", marginBottom: 3 }}>おすすめ</div>
+                            <div style={{ background: POS_COLOR[recommended], borderRadius: 6, padding: "3px 14px", fontSize: 15, fontWeight: 900, color: "#000", display: "inline-block" }}>{recommended}</div>
+                          </div>
+                        )}
+                      </div>
+                      {!noData && Object.entries(scores).map(([pos, score]) => (
+                        <div key={pos} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+                          <div style={{ width: 28, fontSize: 11, fontWeight: 700, color: pos === recommended ? POS_COLOR[pos] : "#4a7fa5", textAlign: "right" }}>{pos}</div>
+                          <div style={{ flex: 1, background: "#0a0f1e", borderRadius: 3, height: 7, overflow: "hidden" }}>
+                            <div style={{ width: `${score}%`, height: "100%", background: pos === recommended ? POS_COLOR[pos] : "#1e3a5f", borderRadius: 3, transition: "width 0.6s" }} />
+                          </div>
+                          <div style={{ width: 28, fontSize: 11, color: pos === recommended ? POS_COLOR[pos] : "#4a7fa5", fontWeight: pos === recommended ? 700 : 400 }}>{score}</div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
