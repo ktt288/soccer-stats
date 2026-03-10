@@ -463,20 +463,19 @@ export default function App() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ fontSize: 11, color: "#4a7fa5", letterSpacing: 2, fontWeight: 700, textTransform: "uppercase" }}>101FC</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>スタッツ記録</div>
           </div>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 32, fontWeight: 900, fontVariantNumeric: "tabular-nums", color: running ? "#00e676" : "#fff", letterSpacing: 2, lineHeight: 1, transition: "color 0.3s" }}>
               {formatTime(matchTime)}
             </div>
-            <div style={{ display: "flex", gap: 6, marginTop: 4, justifyContent: "center" }}>
-              <button onClick={toggleTimer} style={{ background: running ? "#c62828" : "#1b5e20", color: "#fff", border: "none", borderRadius: 6, padding: "3px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer", letterSpacing: 1 }}>
+            <div style={{ display: "flex", gap: "clamp(3px, 1.2vw, 6px)", marginTop: 4, justifyContent: "center" }}>
+              <button onClick={toggleTimer} style={{ background: running ? "#c62828" : "#1b5e20", color: "#fff", border: "none", borderRadius: 6, padding: "3px clamp(6px, 2.5vw, 14px)", fontSize: "clamp(9px, 2.8vw, 11px)", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
                 {running ? "⏸ 停止" : "▶ 開始"}
               </button>
               <button
                 onClick={() => setSaveModal(true)}
                 disabled={log.length === 0}
-                style={{ background: log.length > 0 ? "#0d47a1" : "#0a0f1e", border: `1px solid ${log.length > 0 ? "#1565c0" : "#1e3a5f"}`, borderRadius: 6, color: log.length > 0 ? "#90caf9" : "#2a4a6a", fontSize: 11, fontWeight: 700, padding: "3px 10px", cursor: log.length > 0 ? "pointer" : "default", letterSpacing: 1 }}
+                style={{ background: log.length > 0 ? "#0d47a1" : "#0a0f1e", border: `1px solid ${log.length > 0 ? "#1565c0" : "#1e3a5f"}`, borderRadius: 6, color: log.length > 0 ? "#90caf9" : "#2a4a6a", fontSize: "clamp(9px, 2.8vw, 11px)", fontWeight: 700, padding: "3px clamp(5px, 2vw, 10px)", cursor: log.length > 0 ? "pointer" : "default", whiteSpace: "nowrap" }}
               >
                 💾 保存
               </button>
@@ -491,7 +490,7 @@ export default function App() {
                   setSelectedPlayer(null);
                 }}
                 disabled={log.length === 0 && matchTime === 0}
-                style={{ background: "#0a0f1e", border: `1px solid ${(log.length > 0 || matchTime > 0) ? "#7f1d1d" : "#1e3a5f"}`, borderRadius: 6, color: (log.length > 0 || matchTime > 0) ? "#f87171" : "#2a4a6a", fontSize: 11, fontWeight: 700, padding: "3px 10px", cursor: (log.length > 0 || matchTime > 0) ? "pointer" : "default", letterSpacing: 1 }}
+                style={{ background: "#0a0f1e", border: `1px solid ${(log.length > 0 || matchTime > 0) ? "#7f1d1d" : "#1e3a5f"}`, borderRadius: 6, color: (log.length > 0 || matchTime > 0) ? "#f87171" : "#2a4a6a", fontSize: "clamp(9px, 2.8vw, 11px)", fontWeight: 700, padding: "3px clamp(5px, 2vw, 10px)", cursor: (log.length > 0 || matchTime > 0) ? "pointer" : "default", whiteSpace: "nowrap" }}
               >
                 🗑 リセット
               </button>
