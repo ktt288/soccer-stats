@@ -297,8 +297,13 @@ export default function App() {
         elapsed_seconds: entry.time,
       };
     });
-    await supabase.from("match_events").insert(eventsToInsert);
+    const { error: eventsError } = await supabase.from("match_events").insert(eventsToInsert);
     setSaving(false);
+    if (eventsError) {
+      console.error("match_events insert error:", eventsError);
+      alert("エラー: " + eventsError.message);
+      return;
+    }
     setSaveModal(false);
     setSaveNotes("");
     alert("試合データを保存しました！");
