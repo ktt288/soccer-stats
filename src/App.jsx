@@ -272,7 +272,8 @@ export default function App() {
       .select("*")
       .eq("match_id", matchId)
       .order("elapsed_seconds", { ascending: true });
-    if (!error) setSelectedMatchEvents(data || []);
+    if (error) console.error("match_events select error:", error);
+    else setSelectedMatchEvents(data || []);
   };
 
   const saveMatch = async () => {
@@ -304,6 +305,13 @@ export default function App() {
       alert("エラー: " + eventsError.message);
       return;
     }
+    // タイマー停止・スタッツ・ログ・時間リセット
+    clearInterval(timerRef.interval);
+    setRunning(false);
+    setMatchTime(0);
+    setLog([]);
+    setStats(Object.fromEntries(players.map(p => [p.id, Object.fromEntries(events.map(ev => [ev.id, 0]))])));
+    setSelectedPlayer(null);
     setSaveModal(false);
     setSaveNotes("");
     alert("試合データを保存しました！");
