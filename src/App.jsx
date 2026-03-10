@@ -1,14 +1,14 @@
 import { useState } from "react";
 
 const DEFAULT_PLAYERS = [
-  { id: 1, name: "れん",       number: 1, position: "GK" },
-  { id: 2, name: "ようしろう", number: 2, position: "DF" },
-  { id: 3, name: "なおと",     number: 3, position: "DF" },
-  { id: 4, name: "はるき",     number: 4, position: "MF" },
-  { id: 5, name: "たすく",     number: 5, position: "MF" },
-  { id: 6, name: "りんたろう", number: 6, position: "MF" },
-  { id: 7, name: "こうたろう", number: 7, position: "FW" },
-  { id: 8, name: "ゆうま",     number: 8, position: "FW" },
+  { id: 1, name: "れん",       number: 1, position: "GK", starter: true },
+  { id: 2, name: "ようしろう", number: 2, position: "DF", starter: true },
+  { id: 3, name: "なおと",     number: 3, position: "DF", starter: true },
+  { id: 4, name: "はるき",     number: 4, position: "MF", starter: true },
+  { id: 5, name: "たすく",     number: 5, position: "MF", starter: true },
+  { id: 6, name: "りんたろう", number: 6, position: "MF", starter: true },
+  { id: 7, name: "こうたろう", number: 7, position: "FW", starter: true },
+  { id: 8, name: "ゆうま",     number: 8, position: "FW", starter: true },
 ];
 
 const DEFAULT_EVENTS = [
@@ -99,11 +99,9 @@ function RankBar({ players, stats, eventId, color, emoji, label }) {
             </div>
             <div style={{ flex: 1, background: "#0a0f1e", borderRadius: 4, height: 8, overflow: "hidden" }}>
               <div style={{
-                width: `${(val / max) * 100}%`,
-                height: "100%",
+                width: `${(val / max) * 100}%`, height: "100%",
                 background: `linear-gradient(90deg, ${color}, ${color}88)`,
-                borderRadius: 4, transition: "width 0.5s",
-                minWidth: val > 0 ? 6 : 0,
+                borderRadius: 4, transition: "width 0.5s", minWidth: val > 0 ? 6 : 0,
               }} />
             </div>
             <div style={{ fontSize: 13, fontWeight: 900, color: val > 0 ? color : "#2a4a6a", width: 24, textAlign: "right" }}>
@@ -116,13 +114,27 @@ function RankBar({ players, stats, eventId, color, emoji, label }) {
   );
 }
 
+// ---- Player Card (record / radar tab) ----
+function PlayerCard({ p, selected, onClick }) {
+  const posColor = POS_COLOR[p.position] || "#e8eaf0";
+  return (
+    <button onClick={onClick} style={{
+      background: selected ? `linear-gradient(135deg, ${posColor}33, ${posColor}66)` : "#0d1b2e",
+      border: selected ? `2px solid ${posColor}` : "2px solid #1e3a5f",
+      borderRadius: 10, padding: "10px 4px", cursor: "pointer", textAlign: "center",
+      transition: "all 0.15s", transform: selected ? "scale(1.05)" : "scale(1)",
+    }}>
+      <div style={{ fontSize: 22, fontWeight: 900, color: selected ? posColor : "#e8eaf0", lineHeight: 1 }}>{p.number}</div>
+      <div style={{ fontSize: 9, color: "#4a7fa5", marginTop: 2, lineHeight: 1.2 }}>{p.name.split(" ").at(-1)}</div>
+      <div style={{ fontSize: 8, color: posColor, fontWeight: 700, marginTop: 2 }}>{p.position}</div>
+    </button>
+  );
+}
+
 // ---- Event Editor Row ----
 function EventEditorRow({ ev, onUpdate, onDelete, canDelete }) {
   return (
-    <div style={{
-      background: "#0d1b2e", border: "1px solid #1e3a5f", borderRadius: 10,
-      padding: "10px 12px", marginBottom: 8,
-    }}>
+    <div style={{ background: "#0d1b2e", border: "1px solid #1e3a5f", borderRadius: 10, padding: "10px 12px", marginBottom: 8 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
         <input
           value={ev.emoji}
@@ -130,7 +142,7 @@ function EventEditorRow({ ev, onUpdate, onDelete, canDelete }) {
           style={{
             width: 44, background: "#0a0f1e", border: "1px solid #1e3a5f",
             borderRadius: 6, padding: "6px 4px", color: "#e8eaf0",
-            fontSize: 16, fontFamily: "inherit", textAlign: "center", outline: "none",
+            fontFamily: "inherit", textAlign: "center", outline: "none",
           }}
           onFocus={e => e.target.style.borderColor = "#00e5ff"}
           onBlur={e => e.target.style.borderColor = "#1e3a5f"}
@@ -142,7 +154,7 @@ function EventEditorRow({ ev, onUpdate, onDelete, canDelete }) {
           style={{
             flex: 1, background: "#0a0f1e", border: "1px solid #1e3a5f",
             borderRadius: 6, padding: "6px 10px", color: "#e8eaf0",
-            fontSize: 14, fontFamily: "inherit", outline: "none",
+            fontFamily: "inherit", outline: "none",
           }}
           onFocus={e => e.target.style.borderColor = "#00e5ff"}
           onBlur={e => e.target.style.borderColor = "#1e3a5f"}
@@ -151,22 +163,11 @@ function EventEditorRow({ ev, onUpdate, onDelete, canDelete }) {
           type="color"
           value={ev.color}
           onChange={e => onUpdate("color", e.target.value)}
-          style={{
-            width: 36, height: 34, border: "1px solid #1e3a5f",
-            borderRadius: 6, padding: 2, background: "#0a0f1e", cursor: "pointer",
-          }}
+          style={{ width: 36, height: 34, border: "1px solid #1e3a5f", borderRadius: 6, padding: 2, background: "#0a0f1e", cursor: "pointer" }}
           title="色を選択"
         />
         {canDelete && (
-          <button
-            onClick={onDelete}
-            style={{
-              background: "#3a1010", border: "1px solid #7a2020", borderRadius: 6,
-              color: "#f44336", fontSize: 14, padding: "5px 10px", cursor: "pointer",
-              lineHeight: 1,
-            }}
-            title="削除"
-          >
+          <button onClick={onDelete} style={{ background: "#3a1010", border: "1px solid #7a2020", borderRadius: 6, color: "#f44336", fontSize: 14, padding: "5px 10px", cursor: "pointer", lineHeight: 1 }}>
             ✕
           </button>
         )}
@@ -183,7 +184,7 @@ function EventEditorRow({ ev, onUpdate, onDelete, canDelete }) {
             style={{
               width: 56, background: "#0a0f1e", border: "1px solid #1e3a5f",
               borderRadius: 6, padding: "4px 6px", color: "#e8eaf0",
-              fontSize: 13, fontFamily: "inherit", outline: "none", textAlign: "center",
+              fontFamily: "inherit", outline: "none", textAlign: "center",
             }}
             onFocus={e => e.target.style.borderColor = "#00e5ff"}
             onBlur={e => e.target.style.borderColor = "#1e3a5f"}
@@ -210,16 +211,14 @@ export default function App() {
   const [statsSubTab, setStatsSubTab] = useState("ranking");
   const [players, setPlayers] = useState(DEFAULT_PLAYERS);
   const [editPlayers, setEditPlayers] = useState(() =>
-    Object.fromEntries(DEFAULT_PLAYERS.map(p => [p.id, { name: p.name, number: p.number, position: p.position }]))
+    Object.fromEntries(DEFAULT_PLAYERS.map(p => [p.id, { name: p.name, number: p.number, position: p.position, starter: p.starter }]))
   );
   const [events, setEvents] = useState(DEFAULT_EVENTS);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [radarPlayer, setRadarPlayer] = useState(DEFAULT_PLAYERS[0].id);
   const [stats, setStats] = useState(() => {
     const s = {};
-    DEFAULT_PLAYERS.forEach(p => {
-      s[p.id] = Object.fromEntries(DEFAULT_EVENTS.map(ev => [ev.id, 0]));
-    });
+    DEFAULT_PLAYERS.forEach(p => { s[p.id] = Object.fromEntries(DEFAULT_EVENTS.map(ev => [ev.id, 0])); });
     return s;
   });
   const [log, setLog] = useState([]);
@@ -246,6 +245,10 @@ export default function App() {
     setTimeout(() => setFlash(null), 400);
   };
 
+  const setEditPlayer = (id, field, value) => {
+    setEditPlayers(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+  };
+
   const applyPlayers = () => {
     setPlayers(prev => prev.map(p => {
       const e = editPlayers[p.id];
@@ -254,12 +257,28 @@ export default function App() {
         name: e.name.trim() || p.name,
         number: parseInt(e.number) || p.number,
         position: e.position || p.position,
+        starter: e.starter,
       };
     }));
   };
 
-  const setEditPlayer = (id, field, value) => {
-    setEditPlayers(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+  const addPlayer = () => {
+    const newId = Date.now();
+    const newPlayer = { id: newId, name: "新しい選手", number: 99, position: "MF", starter: false };
+    setPlayers(prev => [...prev, newPlayer]);
+    setEditPlayers(prev => ({ ...prev, [newId]: { name: newPlayer.name, number: newPlayer.number, position: newPlayer.position, starter: newPlayer.starter } }));
+    setStats(prev => ({ ...prev, [newId]: Object.fromEntries(events.map(ev => [ev.id, 0])) }));
+  };
+
+  const deletePlayer = (id) => {
+    setPlayers(prev => {
+      const remaining = prev.filter(p => p.id !== id);
+      if (radarPlayer === id && remaining.length > 0) setRadarPlayer(remaining[0].id);
+      return remaining;
+    });
+    setEditPlayers(prev => { const { [id]: _, ...rest } = prev; return rest; });
+    setStats(prev => { const { [id]: _, ...rest } = prev; return rest; });
+    if (selectedPlayer === id) setSelectedPlayer(null);
   };
 
   const updateEvent = (id, field, value) => {
@@ -272,9 +291,7 @@ export default function App() {
     setEvents(prev => [...prev, newEvent]);
     setStats(prev => {
       const updated = {};
-      Object.keys(prev).forEach(pid => {
-        updated[pid] = { ...prev[pid], [newId]: 0 };
-      });
+      Object.keys(prev).forEach(pid => { updated[pid] = { ...prev[pid], [newId]: 0 }; });
       return updated;
     });
   };
@@ -284,10 +301,7 @@ export default function App() {
     setEvents(prev => prev.filter(ev => ev.id !== id));
     setStats(prev => {
       const updated = {};
-      Object.keys(prev).forEach(pid => {
-        const { [id]: _, ...rest } = prev[pid];
-        updated[pid] = rest;
-      });
+      Object.keys(prev).forEach(pid => { const { [id]: _, ...rest } = prev[pid]; updated[pid] = rest; });
       return updated;
     });
   };
@@ -297,26 +311,27 @@ export default function App() {
     return events.reduce((sum, ev) => sum + (s[ev.id] || 0), 0);
   };
 
+  const starters = players.filter(p => p.starter);
+  const subs = players.filter(p => !p.starter);
   const overallSorted = [...players].sort((a, b) => totalFor(b.id) - totalFor(a.id));
-  const currentRadarPlayer = players.find(p => p.id === radarPlayer);
+  const currentRadarPlayer = players.find(p => p.id === radarPlayer) || players[0];
 
-  const containerStyle = {
-    fontFamily: "'Noto Sans JP', sans-serif",
-    background: "#07101f",
-    minHeight: "100svh",
-    color: "#e8eaf0",
-    maxWidth: 480,
-    width: "100%",
-    margin: "0 auto",
-    display: "flex",
-    flexDirection: "column",
-    boxSizing: "border-box",
-    overflowX: "hidden",
-    position: "relative",
-  };
+  const sectionLabel = (text) => (
+    <div style={{ fontSize: 11, color: "#4a7fa5", fontWeight: 700, letterSpacing: 2, marginBottom: 8, textTransform: "uppercase" }}>{text}</div>
+  );
+
+  const playerGrid = (list, selectedId, onSelect) => (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+      {list.map(p => <PlayerCard key={p.id} p={p} selected={selectedId === p.id} onClick={() => onSelect(p.id)} />)}
+    </div>
+  );
 
   return (
-    <div style={containerStyle}>
+    <div style={{
+      fontFamily: "'Noto Sans JP', sans-serif", background: "#07101f", minHeight: "100svh",
+      color: "#e8eaf0", maxWidth: 480, width: "100%", margin: "0 auto",
+      display: "flex", flexDirection: "column", boxSizing: "border-box", overflowX: "hidden",
+    }}>
 
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #0d2137, #0a1628)", padding: "16px 20px 12px", borderBottom: "1px solid #1e3a5f", position: "sticky", top: 0, zIndex: 10 }}>
@@ -351,25 +366,24 @@ export default function App() {
         {tab === "record" && (
           <div>
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, color: "#4a7fa5", fontWeight: 700, letterSpacing: 2, marginBottom: 8, textTransform: "uppercase" }}>選手を選ぶ</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-                {players.map(p => (
-                  <button key={p.id} onClick={() => setSelectedPlayer(p.id)} style={{
-                    background: selectedPlayer === p.id ? `linear-gradient(135deg, ${POS_COLOR[p.position]}33, ${POS_COLOR[p.position]}66)` : "#0d1b2e",
-                    border: selectedPlayer === p.id ? `2px solid ${POS_COLOR[p.position]}` : "2px solid #1e3a5f",
-                    borderRadius: 10, padding: "10px 4px", cursor: "pointer", textAlign: "center",
-                    transition: "all 0.15s", transform: selectedPlayer === p.id ? "scale(1.05)" : "scale(1)",
-                  }}>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: selectedPlayer === p.id ? POS_COLOR[p.position] : "#e8eaf0", lineHeight: 1 }}>{p.number}</div>
-                    <div style={{ fontSize: 9, color: "#4a7fa5", marginTop: 2, lineHeight: 1.2 }}>{p.name.split(" ").at(-1)}</div>
-                    <div style={{ fontSize: 8, color: POS_COLOR[p.position], fontWeight: 700, marginTop: 2 }}>{p.position}</div>
-                  </button>
-                ))}
-              </div>
+              {/* Starters */}
+              {sectionLabel("スタメン")}
+              {playerGrid(starters, selectedPlayer, setSelectedPlayer)}
+
+              {/* Subs */}
+              {subs.length > 0 && (
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, color: "#ff9800", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>控え</div>
+                    <div style={{ flex: 1, height: 1, background: "#1e3a5f" }} />
+                  </div>
+                  {playerGrid(subs, selectedPlayer, setSelectedPlayer)}
+                </div>
+              )}
             </div>
 
             <div>
-              <div style={{ fontSize: 11, color: "#4a7fa5", fontWeight: 700, letterSpacing: 2, marginBottom: 8, textTransform: "uppercase" }}>イベントを記録</div>
+              {sectionLabel("イベントを記録")}
               {!selectedPlayer ? (
                 <div style={{ textAlign: "center", padding: "24px", color: "#2a4a6a", fontSize: 14, background: "#0d1b2e", borderRadius: 12, border: "1px dashed #1e3a5f" }}>
                   ↑ まず選手を選んでください
@@ -423,59 +437,42 @@ export default function App() {
             {statsSubTab === "radar" && (
               <div>
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 11, color: "#4a7fa5", fontWeight: 700, letterSpacing: 2, marginBottom: 8, textTransform: "uppercase" }}>選手を選ぶ</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-                    {players.map(p => (
-                      <button key={p.id} onClick={() => setRadarPlayer(p.id)} style={{
-                        background: radarPlayer === p.id ? `linear-gradient(135deg, ${POS_COLOR[p.position]}33, ${POS_COLOR[p.position]}66)` : "#0d1b2e",
-                        border: radarPlayer === p.id ? `2px solid ${POS_COLOR[p.position]}` : "2px solid #1e3a5f",
-                        borderRadius: 10, padding: "10px 4px", cursor: "pointer", textAlign: "center",
-                        transform: radarPlayer === p.id ? "scale(1.05)" : "scale(1)", transition: "all 0.15s",
-                      }}>
-                        <div style={{ fontSize: 22, fontWeight: 900, color: radarPlayer === p.id ? POS_COLOR[p.position] : "#e8eaf0" }}>{p.number}</div>
-                        <div style={{ fontSize: 9, color: "#4a7fa5", marginTop: 2 }}>{p.name.split(" ").at(-1)}</div>
-                        <div style={{ fontSize: 8, color: POS_COLOR[p.position], fontWeight: 700, marginTop: 2 }}>{p.position}</div>
-                      </button>
-                    ))}
-                  </div>
+                  {sectionLabel("選手を選ぶ")}
+                  {playerGrid(players, radarPlayer, setRadarPlayer)}
                 </div>
-
-                <div style={{ background: "#0d1b2e", border: `1px solid ${POS_COLOR[currentRadarPlayer.position]}44`, borderRadius: 16, padding: "20px 16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                    <div style={{ fontSize: 36, fontWeight: 900, color: POS_COLOR[currentRadarPlayer.position], lineHeight: 1 }}>{currentRadarPlayer.number}</div>
-                    <div>
-                      <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>{currentRadarPlayer.name}</div>
-                      <div style={{ fontSize: 11, color: POS_COLOR[currentRadarPlayer.position], fontWeight: 700 }}>{currentRadarPlayer.position}</div>
+                {currentRadarPlayer && (
+                  <div style={{ background: "#0d1b2e", border: `1px solid ${POS_COLOR[currentRadarPlayer.position]}44`, borderRadius: 16, padding: "20px 16px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                      <div style={{ fontSize: 36, fontWeight: 900, color: POS_COLOR[currentRadarPlayer.position], lineHeight: 1 }}>{currentRadarPlayer.number}</div>
+                      <div>
+                        <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>{currentRadarPlayer.name}</div>
+                        <div style={{ fontSize: 11, color: POS_COLOR[currentRadarPlayer.position], fontWeight: 700 }}>{currentRadarPlayer.position}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+                      <RadarChart data={stats[radarPlayer] || {}} color={POS_COLOR[currentRadarPlayer.position]} size={200} events={events} />
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                      {events.map(ev => (
+                        <div key={ev.id} style={{ background: "#0a0f1e", borderRadius: 8, padding: "10px 12px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                            <span style={{ fontSize: 11, color: ev.color, fontWeight: 700 }}>{ev.emoji} {ev.label}</span>
+                            <span style={{ fontSize: 16, fontWeight: 900, color: "#fff" }}>{stats[radarPlayer]?.[ev.id] ?? 0}</span>
+                          </div>
+                          <div style={{ background: "#1e3a5f", borderRadius: 3, height: 4, overflow: "hidden" }}>
+                            <div style={{ width: `${Math.min(((stats[radarPlayer]?.[ev.id] ?? 0) / (ev.max || 10)) * 100, 100)}%`, height: "100%", background: ev.color, borderRadius: 3, transition: "width 0.5s" }} />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
-                    <RadarChart data={stats[radarPlayer] || {}} color={POS_COLOR[currentRadarPlayer.position]} size={200} events={events} />
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    {events.map(ev => (
-                      <div key={ev.id} style={{ background: "#0a0f1e", borderRadius: 8, padding: "10px 12px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                          <span style={{ fontSize: 11, color: ev.color, fontWeight: 700 }}>{ev.emoji} {ev.label}</span>
-                          <span style={{ fontSize: 16, fontWeight: 900, color: "#fff" }}>{stats[radarPlayer]?.[ev.id] ?? 0}</span>
-                        </div>
-                        <div style={{ background: "#1e3a5f", borderRadius: 3, height: 4, overflow: "hidden" }}>
-                          <div style={{
-                            width: `${Math.min(((stats[radarPlayer]?.[ev.id] ?? 0) / (ev.max || 10)) * 100, 100)}%`,
-                            height: "100%", background: ev.color, borderRadius: 3, transition: "width 0.5s",
-                          }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                )}
               </div>
             )}
 
             {statsSubTab === "overall" && (
               <div>
-                <div style={{ fontSize: 11, color: "#4a7fa5", fontWeight: 700, letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" }}>総合ランキング</div>
+                {sectionLabel("総合ランキング")}
                 {overallSorted.map((p, rank) => {
                   const s = stats[p.id] || {};
                   const total = totalFor(p.id);
@@ -491,11 +488,11 @@ export default function App() {
                             <div style={{ fontSize: 14, fontWeight: 700 }}>
                               <span style={{ color: POS_COLOR[p.position], marginRight: 6, fontSize: 12 }}>#{p.number}</span>
                               {p.name}
+                              {!p.starter && <span style={{ fontSize: 10, color: "#ff9800", marginLeft: 6, fontWeight: 600 }}>控え</span>}
                             </div>
                             <div style={{ fontSize: 10, color: POS_COLOR[p.position] }}>{p.position}</div>
                           </div>
                         </div>
-                        {(s.goal ?? 0) > 0 && <div style={{ fontSize: 13, color: "#00c853", fontWeight: 700 }}>⚽ {s.goal}G</div>}
                       </div>
                       <div style={{ background: "#0a0f1e", borderRadius: 4, height: 6, marginBottom: 8, overflow: "hidden" }}>
                         <div style={{ width: `${(total / maxTotal) * 100}%`, height: "100%", background: `linear-gradient(90deg, ${POS_COLOR[p.position]}, ${POS_COLOR[p.position]}88)`, borderRadius: 4, transition: "width 0.5s" }} />
@@ -520,81 +517,82 @@ export default function App() {
         {tab === "settings" && (
           <div>
             {/* Player Editor */}
-            <div style={{ fontSize: 11, color: "#4a7fa5", fontWeight: 700, letterSpacing: 2, marginBottom: 16, textTransform: "uppercase" }}>選手の編集</div>
+            {sectionLabel("選手の編集")}
             {players.map(p => {
               const ep = editPlayers[p.id];
+              if (!ep) return null;
               const posColor = POS_COLOR[ep.position] || "#e8eaf0";
               return (
                 <div key={p.id} style={{ background: "#0d1b2e", border: `1px solid ${posColor}44`, borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                    {/* Number */}
                     <input
                       type="number"
                       value={ep.number}
-                      min={1}
-                      max={99}
+                      min={1} max={99}
                       onChange={e => setEditPlayer(p.id, "number", e.target.value)}
-                      style={{
-                        width: 52, background: "#0a0f1e", border: "1px solid #1e3a5f", borderRadius: 6,
-                        padding: "6px 4px", color: posColor, fontSize: 18, fontWeight: 900,
-                        fontFamily: "inherit", outline: "none", textAlign: "center",
-                      }}
+                      style={{ width: 52, background: "#0a0f1e", border: "1px solid #1e3a5f", borderRadius: 6, padding: "6px 4px", color: posColor, fontWeight: 900, fontFamily: "inherit", outline: "none", textAlign: "center" }}
                       onFocus={e => e.target.style.borderColor = "#00e5ff"}
                       onBlur={e => e.target.style.borderColor = "#1e3a5f"}
                     />
-                    {/* Position */}
                     <select
                       value={ep.position}
                       onChange={e => setEditPlayer(p.id, "position", e.target.value)}
-                      style={{
-                        width: 60, background: "#0a0f1e", border: "1px solid #1e3a5f", borderRadius: 6,
-                        padding: "6px 4px", color: posColor, fontSize: 12, fontWeight: 700,
-                        fontFamily: "inherit", outline: "none", cursor: "pointer",
-                      }}
+                      style={{ width: 60, background: "#0a0f1e", border: "1px solid #1e3a5f", borderRadius: 6, padding: "6px 4px", color: posColor, fontWeight: 700, fontFamily: "inherit", outline: "none", cursor: "pointer" }}
                       onFocus={e => e.target.style.borderColor = "#00e5ff"}
                       onBlur={e => e.target.style.borderColor = "#1e3a5f"}
                     >
-                      {["GK", "DF", "MF", "FW"].map(pos => (
-                        <option key={pos} value={pos}>{pos}</option>
-                      ))}
+                      {["GK", "DF", "MF", "FW"].map(pos => <option key={pos} value={pos}>{pos}</option>)}
                     </select>
-                    {/* Name */}
                     <input
                       value={ep.name}
                       onChange={e => setEditPlayer(p.id, "name", e.target.value)}
                       placeholder="選手名"
-                      style={{
-                        flex: 1, background: "#0a0f1e", border: "1px solid #1e3a5f", borderRadius: 6,
-                        padding: "6px 10px", color: "#e8eaf0", fontSize: 14, fontFamily: "inherit", outline: "none",
-                      }}
+                      style={{ flex: 1, background: "#0a0f1e", border: "1px solid #1e3a5f", borderRadius: 6, padding: "6px 10px", color: "#e8eaf0", fontFamily: "inherit", outline: "none" }}
                       onFocus={e => e.target.style.borderColor = "#00e5ff"}
                       onBlur={e => e.target.style.borderColor = "#1e3a5f"}
                     />
+                    <button
+                      onClick={() => deletePlayer(p.id)}
+                      style={{ background: "#3a1010", border: "1px solid #7a2020", borderRadius: 6, color: "#f44336", fontSize: 14, padding: "5px 10px", cursor: "pointer", lineHeight: 1, flexShrink: 0 }}
+                    >
+                      ✕
+                    </button>
                   </div>
+                  {/* Starter toggle */}
+                  <button
+                    onClick={() => setEditPlayer(p.id, "starter", !ep.starter)}
+                    style={{
+                      background: ep.starter ? "#0d2a1a" : "#1a1a0d",
+                      border: `1px solid ${ep.starter ? "#00c853" : "#ff9800"}`,
+                      borderRadius: 6, color: ep.starter ? "#00c853" : "#ff9800",
+                      fontSize: 11, padding: "4px 12px", cursor: "pointer", fontWeight: 700,
+                    }}
+                  >
+                    {ep.starter ? "✅ スタメン" : "🔄 控え"}
+                  </button>
                 </div>
               );
             })}
             <button
+              onClick={addPlayer}
+              style={{ width: "100%", marginTop: 4, padding: "12px", background: "linear-gradient(135deg, #0d2137, #163a5f)", border: "1px dashed #2979ff", borderRadius: 10, color: "#64b5f6", fontSize: 14, fontWeight: 700, cursor: "pointer", letterSpacing: 1 }}
+            >
+              ＋ 選手を追加する
+            </button>
+            <button
               onClick={applyPlayers}
-              style={{
-                width: "100%", marginTop: 4, padding: "14px", background: "linear-gradient(135deg, #00695c, #00897b)",
-                border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 800,
-                cursor: "pointer", letterSpacing: 1,
-              }}
+              style={{ width: "100%", marginTop: 8, padding: "14px", background: "linear-gradient(135deg, #00695c, #00897b)", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", letterSpacing: 1 }}
             >
               ✅ 選手情報を更新する
             </button>
 
             {/* Events / Stats Items */}
             <div style={{ marginTop: 28 }}>
-              <div style={{ fontSize: 11, color: "#4a7fa5", fontWeight: 700, letterSpacing: 2, marginBottom: 4, textTransform: "uppercase" }}>スタッツ項目の編集</div>
-              <div style={{ fontSize: 11, color: "#2a4a6a", marginBottom: 14 }}>
-                絵文字・項目名・色・最大値を自由に変更できます
-              </div>
+              {sectionLabel("スタッツ項目の編集")}
+              <div style={{ fontSize: 11, color: "#2a4a6a", marginBottom: 14 }}>絵文字・項目名・色・最大値を自由に変更できます</div>
               {events.map(ev => (
                 <EventEditorRow
-                  key={ev.id}
-                  ev={ev}
+                  key={ev.id} ev={ev}
                   onUpdate={(field, value) => updateEvent(ev.id, field, value)}
                   onDelete={() => deleteEvent(ev.id)}
                   canDelete={events.length > 1}
@@ -602,11 +600,7 @@ export default function App() {
               ))}
               <button
                 onClick={addEvent}
-                style={{
-                  width: "100%", marginTop: 4, padding: "14px", background: "linear-gradient(135deg, #1a237e, #283593)",
-                  border: "1px dashed #3949ab", borderRadius: 10, color: "#7986cb", fontSize: 14, fontWeight: 700,
-                  cursor: "pointer", letterSpacing: 1,
-                }}
+                style={{ width: "100%", marginTop: 4, padding: "14px", background: "linear-gradient(135deg, #1a237e, #283593)", border: "1px dashed #3949ab", borderRadius: 10, color: "#7986cb", fontSize: 14, fontWeight: 700, cursor: "pointer", letterSpacing: 1 }}
               >
                 ＋ 項目を追加する
               </button>
@@ -617,7 +611,7 @@ export default function App() {
         {/* ===== LOG TAB ===== */}
         {tab === "log" && (
           <div>
-            <div style={{ fontSize: 11, color: "#4a7fa5", fontWeight: 700, letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" }}>イベントログ</div>
+            {sectionLabel("イベントログ")}
             {log.length === 0 && (
               <div style={{ textAlign: "center", padding: "40px", color: "#2a4a6a", fontSize: 14, background: "#0d1b2e", borderRadius: 12, border: "1px dashed #1e3a5f" }}>
                 まだイベントが記録されていません
