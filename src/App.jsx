@@ -1,23 +1,23 @@
 import { useState } from "react";
 
 const DEFAULT_PLAYERS = [
-  { id: 1, name: "田中 蓮",   number: 1, position: "GK" },
-  { id: 2, name: "佐藤 颯",   number: 2, position: "DF" },
-  { id: 3, name: "鈴木 大翔", number: 3, position: "DF" },
-  { id: 4, name: "高橋 悠真", number: 4, position: "MF" },
-  { id: 5, name: "伊藤 蒼",   number: 5, position: "MF" },
-  { id: 6, name: "渡辺 陽太", number: 6, position: "MF" },
-  { id: 7, name: "山本 翔",   number: 7, position: "FW" },
-  { id: 8, name: "中村 隼",   number: 8, position: "FW" },
+  { id: 1, name: "れん",       number: 1, position: "GK" },
+  { id: 2, name: "ようしろう", number: 2, position: "DF" },
+  { id: 3, name: "なおと",     number: 3, position: "DF" },
+  { id: 4, name: "はるき",     number: 4, position: "MF" },
+  { id: 5, name: "たすく",     number: 5, position: "MF" },
+  { id: 6, name: "りんたろう", number: 6, position: "MF" },
+  { id: 7, name: "こうたろう", number: 7, position: "FW" },
+  { id: 8, name: "ゆうま",     number: 8, position: "FW" },
 ];
 
 const DEFAULT_EVENTS = [
-  { id: "goal",    label: "ゴール",       emoji: "⚽", color: "#00c853", max: 5,  inRadar: true },
-  { id: "shot",    label: "シュート",     emoji: "🎯", color: "#2979ff", max: 10, inRadar: true },
-  { id: "pass",    label: "パス成功",     emoji: "✅", color: "#00bcd4", max: 20, inRadar: true },
-  { id: "dribble", label: "ドリブル突破", emoji: "🔥", color: "#ff6d00", max: 10, inRadar: true },
-  { id: "tackle",  label: "タックル",     emoji: "🛡️", color: "#7c4dff", max: 10, inRadar: true },
-  { id: "foul",    label: "ファウル",     emoji: "⚠️", color: "#f44336", max: 10, inRadar: false },
+  { id: "intercept", label: "インターセプト", emoji: "✋", color: "#e91e63", max: 5,  inRadar: true },
+  { id: "shot",      label: "シュート",       emoji: "🎯", color: "#2979ff", max: 10, inRadar: true },
+  { id: "pass",      label: "パス成功",       emoji: "✅", color: "#00bcd4", max: 20, inRadar: true },
+  { id: "dribble",   label: "ドリブル突破",   emoji: "🔥", color: "#ff6d00", max: 10, inRadar: true },
+  { id: "press",     label: "プレス",         emoji: "⚡", color: "#ffd600", max: 10, inRadar: true },
+  { id: "cover",     label: "カバー",         emoji: "🛡️", color: "#7c4dff", max: 10, inRadar: true },
 ];
 
 const POS_COLOR = { GK: "#ffd600", DF: "#00bcd4", MF: "#00c853", FW: "#ff6d00" };

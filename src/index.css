@@ -29,6 +29,11 @@ body {
   overflow-x: hidden;
 }
 
+/* Prevent iOS Safari auto-zoom on input focus (triggered when font-size < 16px) */
+input, select, textarea {
+  font-size: 16px !important;
+}
+
 html {
   overflow-x: hidden;
   width: 100%;
