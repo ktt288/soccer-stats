@@ -280,7 +280,7 @@ export default function App() {
     setSaving(true);
     const { data: matchData, error: matchError } = await supabase
       .from("matches")
-      .insert({ duration_seconds: matchTime, notes: saveNotes.trim() || null })
+      .insert({ duration_seconds: matchTime, notes: saveNotes.trim() || null, played_at: new Date().toISOString() })
       .select()
       .single();
     if (matchError || !matchData) { setSaving(false); return; }
@@ -321,7 +321,7 @@ export default function App() {
   };
 
   const recordEvent = (eventId) => {
-    if (!selectedPlayer) return;
+    if (!selectedPlayer || !running) return;
     setStats(prev => ({
       ...prev,
       [selectedPlayer]: { ...prev[selectedPlayer], [eventId]: (prev[selectedPlayer][eventId] || 0) + 1 },
@@ -461,9 +461,18 @@ export default function App() {
             <div style={{ fontSize: 32, fontWeight: 900, fontVariantNumeric: "tabular-nums", color: running ? "#00e676" : "#fff", letterSpacing: 2, lineHeight: 1, transition: "color 0.3s" }}>
               {formatTime(matchTime)}
             </div>
-            <button onClick={toggleTimer} style={{ marginTop: 4, background: running ? "#c62828" : "#1b5e20", color: "#fff", border: "none", borderRadius: 6, padding: "3px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer", letterSpacing: 1 }}>
-              {running ? "⏸ 停止" : "▶ 開始"}
-            </button>
+            <div style={{ display: "flex", gap: 6, marginTop: 4, justifyContent: "center" }}>
+              <button onClick={toggleTimer} style={{ background: running ? "#c62828" : "#1b5e20", color: "#fff", border: "none", borderRadius: 6, padding: "3px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer", letterSpacing: 1 }}>
+                {running ? "⏸ 停止" : "▶ 開始"}
+              </button>
+              <button
+                onClick={() => setSaveModal(true)}
+                disabled={log.length === 0}
+                style={{ background: log.length > 0 ? "#0d47a1" : "#0a0f1e", border: `1px solid ${log.length > 0 ? "#1565c0" : "#1e3a5f"}`, borderRadius: 6, color: log.length > 0 ? "#90caf9" : "#2a4a6a", fontSize: 11, fontWeight: 700, padding: "3px 10px", cursor: log.length > 0 ? "pointer" : "default", letterSpacing: 1 }}
+              >
+                💾 保存
+              </button>
+            </div>
           </div>
           <button
             onClick={() => supabase.auth.signOut()}
@@ -510,6 +519,10 @@ export default function App() {
               {!selectedPlayer ? (
                 <div style={{ textAlign: "center", padding: "24px", color: "#2a4a6a", fontSize: 14, background: "#0d1b2e", borderRadius: 12, border: "1px dashed #1e3a5f" }}>
                   ↑ まず選手を選んでください
+                </div>
+              ) : !running ? (
+                <div style={{ textAlign: "center", padding: "24px", color: "#ff9800", fontSize: 14, background: "#0d1b2e", borderRadius: 12, border: "1px dashed #ff980044" }}>
+                  ▶ 開始ボタンを押してから記録してください
                 </div>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -964,15 +977,8 @@ export default function App() {
         {/* ===== LOG TAB ===== */}
         {tab === "log" && (
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 11, color: "#4a7fa5", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>イベントログ</div>
-              <button
-                onClick={() => setSaveModal(true)}
-                disabled={log.length === 0}
-                style={{ background: log.length > 0 ? "linear-gradient(135deg, #1b5e20, #2e7d32)" : "#0a0f1e", border: `1px solid ${log.length > 0 ? "#00c853" : "#1e3a5f"}`, borderRadius: 8, color: log.length > 0 ? "#00e676" : "#2a4a6a", fontSize: 12, fontWeight: 700, padding: "6px 14px", cursor: log.length > 0 ? "pointer" : "default" }}
-              >
-                💾 試合を保存
-              </button>
             </div>
             {log.length === 0 && (
               <div style={{ textAlign: "center", padding: "40px", color: "#2a4a6a", fontSize: 14, background: "#0d1b2e", borderRadius: 12, border: "1px dashed #1e3a5f" }}>
