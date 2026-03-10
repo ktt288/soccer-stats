@@ -235,6 +235,8 @@ export default function App() {
   const [selectedMatchEvents, setSelectedMatchEvents] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [matchDetailTab, setMatchDetailTab] = useState("log");
+  const [matchStatsSubTab, setMatchStatsSubTab] = useState("ranking");
+  const [matchRadarPlayerKey, setMatchRadarPlayerKey] = useState(null);
 
   const loadHistory = async () => {
     setLoadingHistory(true);
@@ -377,6 +379,30 @@ export default function App() {
   const subs = players.filter(p => !p.starter);
   const overallSorted = [...players].sort((a, b) => totalFor(b.id) - totalFor(a.id));
   const currentRadarPlayer = players.find(p => p.id === radarPlayer) || players[0];
+
+  // 履歴詳細用スタッツ集計
+  const mPlayers = [];
+  const mStats = {};
+  const mEventMap = {};
+  selectedMatchEvents.forEach(entry => {
+    const key = `${entry.player_number}_${entry.player_name}`;
+    if (!mStats[key]) {
+      mStats[key] = {};
+      mPlayers.push({ id: key, key, name: entry.player_name, number: entry.player_number, position: entry.player_position });
+    }
+    if (entry.event_id) {
+      mStats[key][entry.event_id] = (mStats[key][entry.event_id] || 0) + 1;
+      if (!mEventMap[entry.event_id]) mEventMap[entry.event_id] = entry.event_label;
+    }
+  });
+  const mEventList = Object.entries(mEventMap).map(([id, label]) => {
+    const ev = events.find(e => e.id === id);
+    return { id, label, color: ev?.color || "#4a7fa5", emoji: ev?.emoji || "⭐", max: ev?.max || 10, inRadar: ev?.inRadar ?? true };
+  });
+  const mTotalFor = (key) => mEventList.reduce((s, ev) => s + (mStats[key]?.[ev.id] || 0), 0);
+  const mSorted = [...mPlayers].sort((a, b) => mTotalFor(b.key) - mTotalFor(a.key));
+  const mMaxTotal = Math.max(...mSorted.map(p => mTotalFor(p.key)), 1);
+  const currentMatchRadarPlayer = mPlayers.find(p => p.key === matchRadarPlayerKey) || mPlayers[0];
 
   const sectionLabel = (text) => (
     <div style={{ fontSize: 11, color: "#4a7fa5", fontWeight: 700, letterSpacing: 2, marginBottom: 8, textTransform: "uppercase" }}>{text}</div>
@@ -646,68 +672,108 @@ export default function App() {
                 )}
 
                 {/* スタッツ */}
-                {matchDetailTab === "stats" && (() => {
-                  // selectedMatchEvents からプレイヤー・イベント・スタッツを集計
-                  const mPlayers = [];
-                  const mStats = {}; // { playerKey: { eventId: count } }
-                  const mEventMap = {}; // { eventId: label }
-                  selectedMatchEvents.forEach(entry => {
-                    const key = `${entry.player_number}_${entry.player_name}`;
-                    if (!mStats[key]) {
-                      mStats[key] = {};
-                      mPlayers.push({ key, name: entry.player_name, number: entry.player_number, position: entry.player_position });
-                    }
-                    if (entry.event_id) {
-                      mStats[key][entry.event_id] = (mStats[key][entry.event_id] || 0) + 1;
-                      if (!mEventMap[entry.event_id]) mEventMap[entry.event_id] = entry.event_label;
-                    }
-                  });
-                  const mEventList = Object.entries(mEventMap).map(([id, label]) => ({ id, label }));
-                  const totalFor = (key) => mEventList.reduce((s, ev) => s + (mStats[key]?.[ev.id] || 0), 0);
-                  const sorted = [...mPlayers].sort((a, b) => totalFor(b.key) - totalFor(a.key));
-                  const maxTotal = Math.max(...sorted.map(p => totalFor(p.key)), 1);
+                {matchDetailTab === "stats" && (
+                  <div>
+                    {selectedMatchEvents.length === 0 ? (
+                      <div style={{ textAlign: "center", padding: "24px", color: "#2a4a6a", fontSize: 13 }}>イベントなし</div>
+                    ) : (
+                      <>
+                        {/* スタッツサブタブ */}
+                        <div style={{ display: "flex", background: "#0a0f1e", borderRadius: 10, padding: 4, marginBottom: 16, gap: 4 }}>
+                          {[{ id: "ranking", label: "🏆 ランキング" }, { id: "radar", label: "🕸️ レーダー" }, { id: "overall", label: "📋 総合" }].map(st => (
+                            <button key={st.id} onClick={() => setMatchStatsSubTab(st.id)} style={{
+                              flex: 1, padding: "8px 4px", background: matchStatsSubTab === st.id ? "#1e3a5f" : "none",
+                              border: "none", borderRadius: 7, color: matchStatsSubTab === st.id ? "#00e5ff" : "#4a7fa5",
+                              fontWeight: matchStatsSubTab === st.id ? 700 : 400, fontSize: 11, cursor: "pointer",
+                            }}>
+                              {st.label}
+                            </button>
+                          ))}
+                        </div>
 
-                  if (selectedMatchEvents.length === 0) return (
-                    <div style={{ textAlign: "center", padding: "24px", color: "#2a4a6a", fontSize: 13 }}>イベントなし</div>
-                  );
+                        {/* ランキング */}
+                        {matchStatsSubTab === "ranking" && mEventList.map(ev => (
+                          <RankBar key={ev.id} players={mPlayers} stats={mStats} eventId={ev.id} color={ev.color} emoji={ev.emoji} label={ev.label} />
+                        ))}
 
-                  return (
-                    <div>
-                      {sorted.map((p, rank) => {
-                        const s = mStats[p.key] || {};
-                        const total = totalFor(p.key);
-                        const posColor = POS_COLOR[p.position] || "#e8eaf0";
-                        return (
-                          <div key={p.key} style={{ background: "#0d1b2e", border: rank === 0 ? `1px solid ${posColor}88` : "1px solid #1e3a5f", borderRadius: 12, padding: "14px 16px", marginBottom: 10 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                              <div style={{ fontSize: 14, fontWeight: 900, color: rank === 0 ? "#ffd600" : "#2a4a6a", width: 20 }}>
-                                {rank === 0 ? "👑" : rank + 1}
+                        {/* レーダー */}
+                        {matchStatsSubTab === "radar" && (
+                          <div>
+                            <div style={{ marginBottom: 16 }}>
+                              {sectionLabel("選手を選ぶ")}
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+                                {mPlayers.map(p => (
+                                  <PlayerCard key={p.key} p={p} selected={currentMatchRadarPlayer?.key === p.key} onClick={() => setMatchRadarPlayerKey(p.key)} />
+                                ))}
                               </div>
-                              <div>
-                                <div style={{ fontSize: 14, fontWeight: 700 }}>
-                                  <span style={{ color: posColor, marginRight: 6, fontSize: 12 }}>#{p.number}</span>
-                                  {p.name}
+                            </div>
+                            {currentMatchRadarPlayer && (
+                              <div style={{ background: "#0d1b2e", border: `1px solid ${POS_COLOR[currentMatchRadarPlayer.position]}44`, borderRadius: 16, padding: "20px 16px" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                                  <div style={{ fontSize: 36, fontWeight: 900, color: POS_COLOR[currentMatchRadarPlayer.position], lineHeight: 1 }}>{currentMatchRadarPlayer.number}</div>
+                                  <div>
+                                    <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>{currentMatchRadarPlayer.name}</div>
+                                    <div style={{ fontSize: 11, color: POS_COLOR[currentMatchRadarPlayer.position], fontWeight: 700 }}>{currentMatchRadarPlayer.position}</div>
+                                  </div>
                                 </div>
-                                <div style={{ fontSize: 10, color: posColor }}>{p.position}</div>
+                                <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+                                  <RadarChart data={mStats[currentMatchRadarPlayer.key] || {}} color={POS_COLOR[currentMatchRadarPlayer.position]} size={200} events={mEventList} />
+                                </div>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                                  {mEventList.map(ev => (
+                                    <div key={ev.id} style={{ background: "#0a0f1e", borderRadius: 8, padding: "10px 12px" }}>
+                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                                        <span style={{ fontSize: 11, color: ev.color, fontWeight: 700 }}>{ev.emoji} {ev.label}</span>
+                                        <span style={{ fontSize: 16, fontWeight: 900, color: "#fff" }}>{mStats[currentMatchRadarPlayer.key]?.[ev.id] ?? 0}</span>
+                                      </div>
+                                      <div style={{ background: "#1e3a5f", borderRadius: 3, height: 4, overflow: "hidden" }}>
+                                        <div style={{ width: `${Math.min(((mStats[currentMatchRadarPlayer.key]?.[ev.id] ?? 0) / ev.max) * 100, 100)}%`, height: "100%", background: ev.color, borderRadius: 3 }} />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                              <div style={{ marginLeft: "auto", fontSize: 18, fontWeight: 900, color: posColor }}>{total}</div>
-                            </div>
-                            <div style={{ background: "#0a0f1e", borderRadius: 4, height: 6, marginBottom: 8, overflow: "hidden" }}>
-                              <div style={{ width: `${(total / maxTotal) * 100}%`, height: "100%", background: `linear-gradient(90deg, ${posColor}, ${posColor}88)`, borderRadius: 4 }} />
-                            </div>
-                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                              {mEventList.map(ev => (s[ev.id] ?? 0) > 0 && (
-                                <div key={ev.id} style={{ background: "#1e3a5f", borderRadius: 6, padding: "2px 8px", fontSize: 11, color: "#c8d8e8", fontWeight: 600 }}>
-                                  {ev.label} {s[ev.id]}
-                                </div>
-                              ))}
-                            </div>
+                            )}
                           </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
+                        )}
+
+                        {/* 総合 */}
+                        {matchStatsSubTab === "overall" && mSorted.map((p, rank) => {
+                          const s = mStats[p.key] || {};
+                          const total = mTotalFor(p.key);
+                          const posColor = POS_COLOR[p.position] || "#e8eaf0";
+                          return (
+                            <div key={p.key} style={{ background: "#0d1b2e", border: rank === 0 ? `1px solid ${posColor}88` : "1px solid #1e3a5f", borderRadius: 12, padding: "14px 16px", marginBottom: 10 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                                <div style={{ fontSize: 14, fontWeight: 900, color: rank === 0 ? "#ffd600" : "#2a4a6a", width: 20 }}>
+                                  {rank === 0 ? "👑" : rank + 1}
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: 14, fontWeight: 700 }}>
+                                    <span style={{ color: posColor, marginRight: 6, fontSize: 12 }}>#{p.number}</span>
+                                    {p.name}
+                                  </div>
+                                  <div style={{ fontSize: 10, color: posColor }}>{p.position}</div>
+                                </div>
+                                <div style={{ marginLeft: "auto", fontSize: 18, fontWeight: 900, color: posColor }}>{total}</div>
+                              </div>
+                              <div style={{ background: "#0a0f1e", borderRadius: 4, height: 6, marginBottom: 8, overflow: "hidden" }}>
+                                <div style={{ width: `${(total / mMaxTotal) * 100}%`, height: "100%", background: `linear-gradient(90deg, ${posColor}, ${posColor}88)`, borderRadius: 4 }} />
+                              </div>
+                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                {mEventList.map(ev => (s[ev.id] ?? 0) > 0 && (
+                                  <div key={ev.id} style={{ background: `${ev.color}18`, border: `1px solid ${ev.color}44`, borderRadius: 6, padding: "2px 8px", fontSize: 11, color: ev.color, fontWeight: 600 }}>
+                                    {ev.emoji} {s[ev.id]}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
